@@ -11,8 +11,15 @@ const server = http.createServer((req, res) => {
             break
         case '/info':
             res.setHeader("Content-type","text/html")
-          const page =fs.readFileSync("./public/info.html",{encoding:"utf8"}) 
-            res.end("page")
+          const page =fs.readFileSync("./public/info.html",{encoding:"utf8"},(err,data)=>{
+            if(err){
+                res.statusCode(500)
+                res.end("Error 500")
+            }
+            else{
+                res.end(data);
+            }
+          }) ;
             break;
         case '/vehicles':
             res.end("List of all vehicle records in JSON format")
