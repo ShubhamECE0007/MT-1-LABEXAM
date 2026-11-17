@@ -10,21 +10,65 @@ const server = http.createServer((req, res) => {
             res.end("Application information")
             break
         case '/info':
-            res.setHeader("Content-type","text/html")
-          const page =fs.readFileSync("./public/info.html",{encoding:"utf8"},(err,data)=>{
-            if(err){
-                res.statusCode(500)
-                res.end("Error 500")
-            }
-            else{
-                res.end(data);
-            }
-          }) ;
-            break;
+            res.setHeader("Content-Type", "text/html");
+            fs.readFile("./public/info.html", "utf8", (err, data) => {
+                if (err) {
+                    res.statusCode = 500
+                    res.end("Error 500")
+                } else {
+                    res.end(data)
+                }
+            })
+            break
         case '/vehicles':
-            res.end("List of all vehicle records in JSON format")
+            if (req.method === 'GET') {
+                res.writeHead(200, { "Content-Type": "application/json" })
+                res.end(JSON.stringify(vehicles))
+            }
+            break
+        case '/add-vehicle':
+            if (req.method === 'POST') {
+                let body = ''
+
+                req.on('data', (chunk) => {
+                    body += chunk.toString()
+                })
+
+                req.on('end', () => {
+                    try {
+                        const newVehicle = JSON.parse(body)
+                        const { id, vehicleName, vehicleNumber, type, price } = newVehicle
+                        if (
+                            id === undefined ||
+                            !vehicleName ||
+                            !vehicleNumber ||
+                            !type ||
+                            price === undefined ||
+                            typeof price !== 'number' ||
+                            price <= 0
+                        ) {
+                            res.writeHead(400, { "Content-Type": "application/json" })
+                            return res.end(JSON.stringify({
+                                message: "Missing required fields or invalid price"
+                            }))
+                        }
+                        vehicles.push(newVehicle)
+                        res.writeHead(201, { "Content-Type": "application/json" })
+                        res.end(JSON.stringify({
+                            message: "Vehicle added successfully",
+                            vehicle: newVehicle
+                        }))
+                    } catch (error) {
+                        res.writeHead(400, { "Content-Type": "application/json" })
+                        res.end(JSON.stringify({
+                            message: "Invalid JSON format"
+                        }))
+                    }
+                })
+            }
             break
         default:
+            res.statusCode = 404
             res.end("404 Not Found")
             break
     }
